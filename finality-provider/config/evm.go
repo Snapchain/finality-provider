@@ -10,18 +10,21 @@ const (
 )
 
 type EVMConfig struct {
-	RPCAddr string `long:"rpc-address" description:"address of the rpc server to connect to"`
+	RPCL1Addr                      string `long:"rpc-address" description:"address of the L2rpc server to connect to"`
+	RPCL2Addr                      string `long:"rpc-address" description:"address of the L1rpc server to connect to"`
+	L2OutputOracleContractAddress  string `long:"sol-address" description:"address of the L2output smart contract"`
+	BitcoinStackingContractAddress string `long:"sol-address" description:"address of the Bitcoinstaking smart contract"`
 }
 
 func DefaultEVMConfig() EVMConfig {
 	return EVMConfig{
-		RPCAddr: defaultEVMRPCAddr,
+		RPCL2Addr: defaultEVMRPCAddr,
 	}
 }
 
 func (cfg *EVMConfig) Validate() error {
-	if _, err := url.Parse(cfg.RPCAddr); err != nil {
-		return fmt.Errorf("rpc-addr is not correctly formatted: %w", err)
+	if _, err := url.Parse(cfg.RPCL2Addr); err != nil {
+		return fmt.Errorf("rpcl2-addr is not correctly formatted: %w", err)
 	}
 	return nil
 }
