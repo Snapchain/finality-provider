@@ -259,7 +259,7 @@ func (ec *EVMConsumerController) QueryLatestBlockHeight() (uint64, error) {
 
 	num, err := strconv.ParseUint(strings.TrimPrefix(block.Number, "0x"), 16, 64)
 	if err != nil {
-		fmt.Println("Error:%s", err)
+		return 0, fmt.Errorf("Error:%s", err)
 	}
 
 	return num, nil
