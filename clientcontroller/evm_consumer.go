@@ -199,12 +199,12 @@ func (ec *EVMConsumerController) QueryBlock(height uint64) (*types.BlockInfo, er
 		return nil, fmt.Errorf("error:%s", err)
 	}
 
-	b := &types.BlockInfo{
+	blockinfo := &types.BlockInfo{
 		Height: num,
 		Hash:   []byte(block.Hash),
 	}
 
-	return b, nil
+	return blockinfo, nil
 }
 
 func (ec *EVMConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
