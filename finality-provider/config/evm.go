@@ -10,8 +10,8 @@ const (
 )
 
 type EVMConfig struct {
-	RPCL1Addr                      string `long:"rpc-address" description:"address of the L2rpc server to connect to"`
-	RPCL2Addr                      string `long:"rpc-address" description:"address of the L1rpc server to connect to"`
+	RPCL1Addr                      string `long:"rpc-address" description:"address of the L2 RPC server to connect to"`
+	RPCL2Addr                      string `long:"rpc-address" description:"address of the L1 RPC server to connect to"`
 	L2OutputOracleContractAddress  string `long:"sol-address" description:"address of the L2output smart contract"`
 	BitcoinStackingContractAddress string `long:"sol-address" description:"address of the Bitcoinstaking smart contract"`
 }

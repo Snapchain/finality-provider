@@ -92,47 +92,37 @@ func (ec *EVMConsumerController) QueryLatestFinalizedBlocks(count uint64) ([]*ty
 		return nil, fmt.Errorf("can't get latest finalized block:%s", err)
 
 	}
+
 	type Block struct {
 		Number string
 		Hash   string
 	}
 
-	var B []rpc.BatchElem
+	var Batch []rpc.BatchElem
 
-	for i := 0; i < int(count); i++ {
+	InitBatch(Batch, lastnumber, count, "descent")
 
-		hexStr := Transform(lastnumber)
-		ib := rpc.BatchElem{
-			Method: "eth_getBlockByNumber",
-			Args:   []interface{}{hexStr, true},
-			Result: new(Block),
-		}
-		B = append(B, ib)
-		lastnumber.Sub(lastnumber, big.NewInt(1))
-	}
+	err = ec.evmClient.BatchCall(Batch)
 
-	err = ec.evmClient.BatchCall(B)
 	if err != nil {
 		return nil, fmt.Errorf("can't get latest block:%s", err)
 
 	}
 	var blocks []*types.BlockInfo
 
-	for _, b := range B {
-		nb := b.Result.(*Block)
+	for _, batch := range Batch {
+		nb := batch.Result.(*Block)
 		num, err := strconv.ParseUint(strings.TrimPrefix(nb.Number, "0x"), 16, 64)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
-		ib := &types.BlockInfo{
-			Height:    num,
-			Hash:      []byte(nb.Hash),
-			Finalized: true,
+		ibatch := &types.BlockInfo{
+			Height: num,
+			Hash:   []byte(nb.Hash),
 		}
-		blocks = append(blocks, ib)
+		blocks = append(blocks, ibatch)
 	}
 	return blocks, nil
-
 }
 
 func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {
@@ -145,11 +135,6 @@ func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint6
 		count = limit
 	}
 
-	lastnumber, err := ec.GetLatestFinalizedNumber()
-	if err != nil {
-		return nil, fmt.Errorf("can't get latest finalized block:%s", err)
-
-	}
 	type Block struct {
 		Number string
 		Hash   string
@@ -157,49 +142,33 @@ func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint6
 
 	startnumber := new(big.Int).SetUint64(startHeight)
 
-	var B []rpc.BatchElem
+	var Batch []rpc.BatchElem
 
-	for i := 0; i < int(count); i++ {
+	InitBatch(Batch, startnumber, count, "ascent")
 
-		hexStr := Transform(startnumber)
-		ib := rpc.BatchElem{
-			Method: "eth_getBlockByNumber",
-			Args:   []interface{}{hexStr, true},
-			Result: new(Block),
-		}
-		B = append(B, ib)
-		startnumber.Add(startnumber, big.NewInt(1))
-	}
+	err := ec.evmClient.BatchCall(Batch)
 
-	err = ec.evmClient.BatchCall(B)
 	if err != nil {
-		return nil, fmt.Errorf("can't get  blocks")
+		return nil, fmt.Errorf("can't get blocks")
 
 	}
+
 	var blocks []*types.BlockInfo
 
-	for _, b := range B {
-		nb := b.Result.(*Block)
+	for _, batch := range Batch {
+		nb := batch.Result.(*Block)
 		num, err := strconv.ParseUint(strings.TrimPrefix(nb.Number, "0x"), 16, 64)
 		if err != nil {
 			return nil, fmt.Errorf("error:%s", err)
 		}
 
-		number := new(big.Int).SetUint64(num)
-		var finalized bool = false
-		if number.Cmp(lastnumber) <= 0 {
-			finalized = true
+		ibatch := &types.BlockInfo{
+			Height: num,
+			Hash:   []byte(nb.Hash),
 		}
-
-		ib := &types.BlockInfo{
-			Height:    num,
-			Hash:      []byte(nb.Hash),
-			Finalized: finalized,
-		}
-		blocks = append(blocks, ib)
+		blocks = append(blocks, ibatch)
 	}
 	return blocks, nil
-
 }
 
 func (ec *EVMConsumerController) queryLatestBlocks(startKey []byte, count uint64, status finalitytypes.QueriedBlockStatus, reverse bool) ([]*types.BlockInfo, error) {
@@ -230,31 +199,27 @@ func (ec *EVMConsumerController) QueryBlock(height uint64) (*types.BlockInfo, er
 		return nil, fmt.Errorf("error:%s", err)
 	}
 
-	lastnumber, err := ec.GetLatestFinalizedNumber()
-	if err != nil {
-		return nil, fmt.Errorf("can't get latest finalized block:%s", err)
-	}
-
-	var finalized bool = false
-	if number.Cmp(lastnumber) <= 0 {
-		finalized = true
-	}
-
 	b := &types.BlockInfo{
-		Height:    num,
-		Hash:      []byte(block.Hash),
-		Finalized: finalized,
+		Height: num,
+		Hash:   []byte(block.Hash),
 	}
 
 	return b, nil
 }
 
 func (ec *EVMConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
-	/* TODO: implement
-	1. get the latest finalized block number from `latestBlockNumber()` in the L1 L2OutputOracle contract
-	2. compare the block number with `height`
-	*/
-	return false, nil
+
+	lastnumber, err := ec.GetLatestFinalizedNumber()
+	if err != nil {
+		return false, fmt.Errorf("can't get latest finalized block:%s", err)
+	}
+	number := new(big.Int).SetUint64(height)
+	var finalized bool = false
+	if number.Cmp(lastnumber) <= 0 {
+		finalized = true
+	}
+
+	return finalized, nil
 }
 
 func (ec *EVMConsumerController) QueryActivatedHeight() (uint64, error) {
@@ -298,7 +263,6 @@ func (ec *EVMConsumerController) QueryLatestBlockHeight() (uint64, error) {
 	}
 
 	return num, nil
-
 }
 
 func (ec *EVMConsumerController) Close() error {
@@ -313,8 +277,8 @@ func Transform(number *big.Int) string {
 		hexStr = "0x" + hexStr
 	}
 	return hexStr
-
 }
+
 func (ec *EVMConsumerController) GetLatestFinalizedNumber() (*big.Int, error) {
 
 	conn, err := ethclient.Dial(ec.cfg.RPCL1Addr)
@@ -331,5 +295,28 @@ func (ec *EVMConsumerController) GetLatestFinalizedNumber() (*big.Int, error) {
 		return nil, fmt.Errorf("failed to get latest finalize block number:%s ", err)
 	}
 	return lastnumber, err
+}
 
+func InitBatch(Batch []rpc.BatchElem, number *big.Int, count uint64, order string) {
+
+	type Block struct {
+		Number string
+		Hash   string
+	}
+
+	for i := 0; i < int(count); i++ {
+
+		hexStr := Transform(number)
+		ibatch := rpc.BatchElem{
+			Method: "eth_getBlockByNumber",
+			Args:   []interface{}{hexStr, true},
+			Result: new(Block),
+		}
+		Batch = append(Batch, ibatch)
+		if order == "ascent" {
+			number.Add(number, big.NewInt(1))
+		} else if order == "descent" {
+			number.Sub(number, big.NewInt(1))
+		}
+	}
 }
