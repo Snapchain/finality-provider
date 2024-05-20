@@ -87,7 +87,7 @@ func (ec *EVMConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.Pu
 
 func (ec *EVMConsumerController) QueryLatestFinalizedBlocks(count uint64) ([]*types.BlockInfo, error) {
 
-	lastnumber, err := ec.GetLatestFinalizedNumber()
+	lastNumber, err := ec.GetLatestFinalizedNumber()
 	if err != nil {
 		return nil, fmt.Errorf("can't get latest finalized block:%s", err)
 
@@ -98,11 +98,11 @@ func (ec *EVMConsumerController) QueryLatestFinalizedBlocks(count uint64) ([]*ty
 		Hash   string
 	}
 
-	var Batch []rpc.BatchElem
+	var batchArray []rpc.BatchElem
 
-	InitBatch(Batch, lastnumber, count, "descent")
+	initBatch(batchArray, lastNumber, count, "descent")
 
-	err = ec.evmClient.BatchCall(Batch)
+	err = ec.evmClient.BatchCall(batchArray)
 
 	if err != nil {
 		return nil, fmt.Errorf("can't get latest block:%s", err)
@@ -110,17 +110,17 @@ func (ec *EVMConsumerController) QueryLatestFinalizedBlocks(count uint64) ([]*ty
 	}
 	var blocks []*types.BlockInfo
 
-	for _, batch := range Batch {
+	for _, batch := range batchArray {
 		nb := batch.Result.(*Block)
 		num, err := strconv.ParseUint(strings.TrimPrefix(nb.Number, "0x"), 16, 64)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
-		ibatch := &types.BlockInfo{
+		block := &types.BlockInfo{
 			Height: num,
 			Hash:   []byte(nb.Hash),
 		}
-		blocks = append(blocks, ibatch)
+		blocks = append(blocks, block)
 	}
 	return blocks, nil
 }
@@ -142,11 +142,11 @@ func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint6
 
 	startnumber := new(big.Int).SetUint64(startHeight)
 
-	var Batch []rpc.BatchElem
+	var batchArray []rpc.BatchElem
 
-	InitBatch(Batch, startnumber, count, "ascent")
+	initBatch(batchArray, startnumber, count, "ascent")
 
-	err := ec.evmClient.BatchCall(Batch)
+	err := ec.evmClient.BatchCall(batchArray)
 
 	if err != nil {
 		return nil, fmt.Errorf("can't get blocks")
@@ -155,18 +155,18 @@ func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint6
 
 	var blocks []*types.BlockInfo
 
-	for _, batch := range Batch {
+	for _, batch := range batchArray {
 		nb := batch.Result.(*Block)
 		num, err := strconv.ParseUint(strings.TrimPrefix(nb.Number, "0x"), 16, 64)
 		if err != nil {
 			return nil, fmt.Errorf("error:%s", err)
 		}
 
-		ibatch := &types.BlockInfo{
+		block := &types.BlockInfo{
 			Height: num,
 			Hash:   []byte(nb.Hash),
 		}
-		blocks = append(blocks, ibatch)
+		blocks = append(blocks, block)
 	}
 	return blocks, nil
 }
@@ -209,13 +209,13 @@ func (ec *EVMConsumerController) QueryBlock(height uint64) (*types.BlockInfo, er
 
 func (ec *EVMConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
 
-	lastnumber, err := ec.GetLatestFinalizedNumber()
+	lastNumber, err := ec.GetLatestFinalizedNumber()
 	if err != nil {
 		return false, fmt.Errorf("can't get latest finalized block:%s", err)
 	}
 	number := new(big.Int).SetUint64(height)
 	var finalized bool = false
-	if number.Cmp(lastnumber) <= 0 {
+	if number.Cmp(lastNumber) <= 0 {
 		finalized = true
 	}
 
@@ -290,14 +290,14 @@ func (ec *EVMConsumerController) GetLatestFinalizedNumber() (*big.Int, error) {
 		return nil, fmt.Errorf("failed to instantiate L2OutputOracle contract:%s ", err)
 	}
 
-	lastnumber, err := output.LatestBlockNumber(nil)
+	lastNumber, err := output.LatestBlockNumber(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest finalize block number:%s ", err)
 	}
-	return lastnumber, err
+	return lastNumber, err
 }
 
-func InitBatch(Batch []rpc.BatchElem, number *big.Int, count uint64, order string) {
+func initBatch(batchArray []rpc.BatchElem, number *big.Int, count uint64, order string) {
 
 	type Block struct {
 		Number string
@@ -307,12 +307,12 @@ func InitBatch(Batch []rpc.BatchElem, number *big.Int, count uint64, order strin
 	for i := 0; i < int(count); i++ {
 
 		hexStr := Transform(number)
-		ibatch := rpc.BatchElem{
+		batch := rpc.BatchElem{
 			Method: "eth_getBlockByNumber",
 			Args:   []interface{}{hexStr, true},
 			Result: new(Block),
 		}
-		Batch = append(Batch, ibatch)
+		batchArray = append(batchArray, batch)
 		if order == "ascent" {
 			number.Add(number, big.NewInt(1))
 		} else if order == "descent" {
