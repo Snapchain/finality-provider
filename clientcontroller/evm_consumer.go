@@ -249,6 +249,14 @@ func (ec *EVMConsumerController) QueryBlock(height uint64) (*types.BlockInfo, er
 	return b, nil
 }
 
+func (ec *EVMConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
+	/* TODO: implement
+	1. get the latest finalized block number from `latestBlockNumber()` in the L1 L2OutputOracle contract
+	2. compare the block number with `height`
+	*/
+	return false, nil
+}
+
 func (ec *EVMConsumerController) QueryActivatedHeight() (uint64, error) {
 	/* TODO: implement
 

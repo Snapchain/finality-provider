@@ -32,6 +32,8 @@ type ClientController interface {
 	// Note: the following queries are only for PoC
 
 	// QueryFinalityProviderSlashed queries if the finality provider is slashed
+	// Note: if the FP wants to get the information from the consumer chain directly, they should add this interface
+	// function in ConsumerController. (https://github.com/babylonchain/finality-provider/pull/335#discussion_r1606175344)
 	QueryFinalityProviderSlashed(fpPk *btcec.PublicKey) (bool, error)
 
 	// QueryLastFinalizedEpoch returns the last finalised epoch of Babylon
@@ -68,10 +70,13 @@ type ConsumerController interface {
 	// QueryBlock queries the block at the given height
 	QueryBlock(height uint64) (*types.BlockInfo, error)
 
+	// QueryIsBlockFinalized queries if the block at the given height is finalized
+	QueryIsBlockFinalized(height uint64) (bool, error)
+
 	// QueryBlocks returns a list of blocks from startHeight to endHeight
 	QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error)
 
-	// QueryBestBlock queries the tip block height of the consumer chain
+	// QueryLatestBlockHeight queries the tip block height of the consumer chain
 	QueryLatestBlockHeight() (uint64, error)
 
 	// QueryActivatedHeight returns the activated height of the consumer chain
