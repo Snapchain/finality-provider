@@ -95,7 +95,7 @@ func (ec *EVMConsumerController) QueryLatestFinalizedBlocks(count uint64) ([]*ty
 	/*will be implemented in next PR, wait for "refactor: QueryLatestFinalizedBlocks(count uint64) -> QueryLatestFinalizedBlock() #347"
 
 
-		lastNumber, err := ec.GetLatestFinalizedNumber()
+		lastNumber, err := ec.queryLatestFinalizedNumber()
 		if err != nil {
 			return false, fmt.Errorf("can't get latest finalized block:%s", err)
 		}
@@ -158,7 +158,7 @@ func (ec *EVMConsumerController) QueryBlock(height uint64) (*types.BlockInfo, er
 
 func (ec *EVMConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
 
-	lastNumber, err := ec.GetLatestFinalizedNumber()
+	lastNumber, err := ec.queryLatestFinalizedNumber()
 	if err != nil {
 		return false, fmt.Errorf("can't get latest finalized block:%s", err)
 	}
@@ -213,7 +213,7 @@ func (ec *EVMConsumerController) Close() error {
 	return nil
 }
 
-func (ec *EVMConsumerController) GetLatestFinalizedNumber() (uint64, error) {
+func (ec *EVMConsumerController) queryLatestFinalizedNumber() (uint64, error) {
 
 	output, err := bindings.NewL2OutputOracle(common.HexToAddress(ec.cfg.L2OutputOracleContractAddress), ec.l1Client)
 	if err != nil {
