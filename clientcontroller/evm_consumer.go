@@ -207,7 +207,7 @@ func (ec *EVMConsumerController) QueryLatestBlockHeight() (uint64, error) {
 
 func (ec *EVMConsumerController) Close() error {
 
-	ec.l2Client.Close()
+	ec.l1Client.Close()
 	ec.l2Client.Close()
 
 	return nil
