@@ -204,7 +204,7 @@ func (ec *EVMConsumerController) Close() error {
 
 func (ec *EVMConsumerController) queryLatestFinalizedNumber() (uint64, error) {
 
-	output, err := bindings.NewL2OutputOracle(common.HexToAddress(ec.cfg.L2OutputOracleContractAddress), ec.l1Client)
+	output, err := bindings.NewL2OutputOracle(common.HexToAddress(ec.cfg.L2OutputOracleAddr), ec.l1Client)
 	if err != nil {
 		return 0, fmt.Errorf("failed to instantiate L2OutputOracle contract:%s ", err)
 	}
