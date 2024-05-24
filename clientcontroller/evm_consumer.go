@@ -88,23 +88,11 @@ func (ec *EVMConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.Pu
 	return 0, nil
 }
 
-func (ec *EVMConsumerController) QueryLatestFinalizedBlocks(count uint64) ([]*types.BlockInfo, error) {
-
-	var blocks []*types.BlockInfo
-
-	/*will be implemented in next PR, wait for "refactor: QueryLatestFinalizedBlocks(count uint64) -> QueryLatestFinalizedBlock() #347"
-
-
-		lastNumber, err := ec.queryLatestFinalizedNumber()
-		if err != nil {
-			return false, fmt.Errorf("can't get latest finalized block:%s", err)
-		}
-
-		block,err := ec.QueryBlock(lastNumber)
-	    return blocks, nil
-
-	*/
-	return blocks, nil
+func (ec *EVMConsumerController) QueryLatestFinalizedBlock() (*types.BlockInfo, error) {
+	return &types.BlockInfo{
+		Height: 0,
+		Hash:   nil,
+	}, nil
 }
 
 func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {

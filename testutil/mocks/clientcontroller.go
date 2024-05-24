@@ -81,9 +81,9 @@ func (mr *MockClientControllerMockRecorder) QueryLastFinalizedEpoch() *gomock.Ca
 }
 
 // RegisterFinalityProvider mocks base method.
-func (m *MockClientController) RegisterFinalityProvider(chainPk []byte, fpPk *btcec.PublicKey, pop []byte, commission *math.LegacyDec, description []byte, masterPubRand string) (*types.TxResponse, uint64, error) {
+func (m *MockClientController) RegisterFinalityProvider(chainID string, chainPk []byte, fpPk *btcec.PublicKey, pop []byte, commission *math.LegacyDec, description []byte, masterPubRand string) (*types.TxResponse, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterFinalityProvider", chainPk, fpPk, pop, commission, description, masterPubRand)
+	ret := m.ctrl.Call(m, "RegisterFinalityProvider", chainID, chainPk, fpPk, pop, commission, description, masterPubRand)
 	ret0, _ := ret[0].(*types.TxResponse)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -91,9 +91,151 @@ func (m *MockClientController) RegisterFinalityProvider(chainPk []byte, fpPk *bt
 }
 
 // RegisterFinalityProvider indicates an expected call of RegisterFinalityProvider.
-func (mr *MockClientControllerMockRecorder) RegisterFinalityProvider(chainPk, fpPk, pop, commission, description, masterPubRand interface{}) *gomock.Call {
+func (mr *MockClientControllerMockRecorder) RegisterFinalityProvider(chainID, chainPk, fpPk, pop, commission, description, masterPubRand interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterFinalityProvider", reflect.TypeOf((*MockClientController)(nil).RegisterFinalityProvider), chainPk, fpPk, pop, commission, description, masterPubRand)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterFinalityProvider", reflect.TypeOf((*MockClientController)(nil).RegisterFinalityProvider), chainID, chainPk, fpPk, pop, commission, description, masterPubRand)
+}
+
+// MockConsumerController is a mock of ConsumerController interface.
+type MockConsumerController struct {
+	ctrl     *gomock.Controller
+	recorder *MockConsumerControllerMockRecorder
+}
+
+// MockConsumerControllerMockRecorder is the mock recorder for MockConsumerController.
+type MockConsumerControllerMockRecorder struct {
+	mock *MockConsumerController
+}
+
+// NewMockConsumerController creates a new mock instance.
+func NewMockConsumerController(ctrl *gomock.Controller) *MockConsumerController {
+	mock := &MockConsumerController{ctrl: ctrl}
+	mock.recorder = &MockConsumerControllerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockConsumerController) EXPECT() *MockConsumerControllerMockRecorder {
+	return m.recorder
+}
+
+// Close mocks base method.
+func (m *MockConsumerController) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockConsumerControllerMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockConsumerController)(nil).Close))
+}
+
+// QueryActivatedHeight mocks base method.
+func (m *MockConsumerController) QueryActivatedHeight() (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryActivatedHeight")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryActivatedHeight indicates an expected call of QueryActivatedHeight.
+func (mr *MockConsumerControllerMockRecorder) QueryActivatedHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryActivatedHeight", reflect.TypeOf((*MockConsumerController)(nil).QueryActivatedHeight))
+}
+
+// QueryBlock mocks base method.
+func (m *MockConsumerController) QueryBlock(height uint64) (*types.BlockInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryBlock", height)
+	ret0, _ := ret[0].(*types.BlockInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryBlock indicates an expected call of QueryBlock.
+func (mr *MockConsumerControllerMockRecorder) QueryBlock(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryBlock", reflect.TypeOf((*MockConsumerController)(nil).QueryBlock), height)
+}
+
+// QueryBlocks mocks base method.
+func (m *MockConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryBlocks", startHeight, endHeight, limit)
+	ret0, _ := ret[0].([]*types.BlockInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryBlocks indicates an expected call of QueryBlocks.
+func (mr *MockConsumerControllerMockRecorder) QueryBlocks(startHeight, endHeight, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryBlocks", reflect.TypeOf((*MockConsumerController)(nil).QueryBlocks), startHeight, endHeight, limit)
+}
+
+// QueryFinalityProviderVotingPower mocks base method.
+func (m *MockConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.PublicKey, blockHeight uint64) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryFinalityProviderVotingPower", fpPk, blockHeight)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryFinalityProviderVotingPower indicates an expected call of QueryFinalityProviderVotingPower.
+func (mr *MockConsumerControllerMockRecorder) QueryFinalityProviderVotingPower(fpPk, blockHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryFinalityProviderVotingPower", reflect.TypeOf((*MockConsumerController)(nil).QueryFinalityProviderVotingPower), fpPk, blockHeight)
+}
+
+// QueryIsBlockFinalized mocks base method.
+func (m *MockConsumerController) QueryIsBlockFinalized(height uint64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryIsBlockFinalized", height)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryIsBlockFinalized indicates an expected call of QueryIsBlockFinalized.
+func (mr *MockConsumerControllerMockRecorder) QueryIsBlockFinalized(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockFinalized", reflect.TypeOf((*MockConsumerController)(nil).QueryIsBlockFinalized), height)
+}
+
+// QueryLatestBlockHeight mocks base method.
+func (m *MockConsumerController) QueryLatestBlockHeight() (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryLatestBlockHeight")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryLatestBlockHeight indicates an expected call of QueryLatestBlockHeight.
+func (mr *MockConsumerControllerMockRecorder) QueryLatestBlockHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryLatestBlockHeight", reflect.TypeOf((*MockConsumerController)(nil).QueryLatestBlockHeight))
+}
+
+// QueryLatestFinalizedBlock mocks base method.
+func (m *MockConsumerController) QueryLatestFinalizedBlock() (*types.BlockInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryLatestFinalizedBlock")
+	ret0, _ := ret[0].(*types.BlockInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryLatestFinalizedBlock indicates an expected call of QueryLatestFinalizedBlock.
+func (mr *MockConsumerControllerMockRecorder) QueryLatestFinalizedBlock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryLatestFinalizedBlock", reflect.TypeOf((*MockConsumerController)(nil).QueryLatestFinalizedBlock))
 }
 
 // MockConsumerController is a mock of ConsumerController interface.
