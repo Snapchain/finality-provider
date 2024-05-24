@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	finalitytypes "github.com/babylonchain/babylon/x/finality/types"
 	fpcfg "github.com/babylonchain/finality-provider/finality-provider/config"
 	"github.com/babylonchain/finality-provider/types"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -89,10 +88,18 @@ func (ec *EVMConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.Pu
 }
 
 func (ec *EVMConsumerController) QueryLatestFinalizedBlock() (*types.BlockInfo, error) {
-	return &types.BlockInfo{
-		Height: 0,
-		Hash:   nil,
-	}, nil
+
+	lastNumber, err := ec.queryLatestFinalizedNumber()
+	if err != nil {
+		return nil, fmt.Errorf("can't get latest finalized block number:%s", err)
+	}
+
+	block, err := ec.QueryBlock(lastNumber)
+	if err != nil {
+		return nil, fmt.Errorf("can't get latest finalized block:%s", err)
+	}
+
+	return block, nil
 }
 
 func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint64) ([]*types.BlockInfo, error) {
@@ -118,12 +125,6 @@ func (ec *EVMConsumerController) QueryBlocks(startHeight, endHeight, limit uint6
 
 	}
 
-	return blocks, nil
-}
-
-func (ec *EVMConsumerController) queryLatestBlocks(startKey []byte, count uint64, status finalitytypes.QueriedBlockStatus, reverse bool) ([]*types.BlockInfo, error) {
-	var blocks []*types.BlockInfo
-	// Can be deleted for never using
 	return blocks, nil
 }
 
