@@ -73,18 +73,21 @@ func (ec *EVMConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.Pu
 
 	latest_committed_l2_height = read `latestBlockNumber()` from the L1 L2OutputOracle contract and return the result
 
-	if blockHeight > latest_committed_l2_height:
-
-		query the VP from the L1 oracle contract using "latest" as the block tag
-
-	else:
-
-		1. query the L1 event `emit OutputProposed(_outputRoot, nextOutputIndex(), _l2BlockNumber, block.timestamp, block.number);`
-		  to find the first event where the `_l2BlockNumber` >= blockHeight
-		2. get the block.number from the event
-		3. query the VP from the L1 oracle contract using `block.number` as the block tag
-
 	*/
+
+	latest_committed_l2_height, err := ec.queryLatestFinalizedNumber()
+	if err != nil {
+		return 0, fmt.Errorf("can't get latest finalized block number:%s", err)
+	}
+
+	if blockHeight > latest_committed_l2_height {
+		//query the VP from the L1 oracle contract using "latest" as the block tag
+	} else {
+		/*1. query the L1 event `emit OutputProposed(_outputRoot, nextOutputIndex(), _l2BlockNumber, block.timestamp, block.number);`
+			to find the first event where the `_l2BlockNumber` >= blockHeight
+		     2. get the block.number from the event
+		     3. query the VP from the L1 oracle contract using `block.number` as the block tag	*/
+	}
 
 	return 0, nil
 }
@@ -286,19 +289,18 @@ func (ec *EVMConsumerController) queryBestBlock(query ethereum.FilterQuery, l1_a
 	if err != nil {
 		return nil, err
 	}
-
-	left, right := 0, len(logs)-1
+	// Binary search
+	searchLeft, searchRight := 0, len(logs)-1
 	var result *big.Int
 
-	// Binary search
-	for left <= right {
-		mid := left + (right-left)/2
-		value := new(big.Int).SetBytes(logs[mid].Topics[3].Bytes())
-		if value.Cmp(l1_activated_height) >= 0 {
-			result = value
-			right = mid - 1
+	for searchLeft <= searchRight {
+		searchMid := searchLeft + (searchRight-searchLeft)/2
+		blockNumberValue := new(big.Int).SetBytes(logs[searchMid].Topics[3].Bytes())
+		if blockNumberValue.Cmp(l1_activated_height) >= 0 {
+			result = blockNumberValue
+			searchRight = searchMid - 1
 		} else {
-			left = mid + 1
+			searchLeft = searchMid + 1
 		}
 	}
 
