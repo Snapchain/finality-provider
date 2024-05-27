@@ -75,19 +75,19 @@ func (ec *EVMConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.Pu
 
 	*/
 
-	latest_committed_l2_height, err := ec.queryLatestFinalizedNumber()
+	/*latest_committed_l2_height, err := ec.queryLatestFinalizedNumber()
 	if err != nil {
 		return 0, fmt.Errorf("can't get latest finalized block number:%s", err)
-	}
+	}*/
 
-	if blockHeight > latest_committed_l2_height {
-		//query the VP from the L1 oracle contract using "latest" as the block tag
-	} else {
-		/*1. query the L1 event `emit OutputProposed(_outputRoot, nextOutputIndex(), _l2BlockNumber, block.timestamp, block.number);`
-			to find the first event where the `_l2BlockNumber` >= blockHeight
-		     2. get the block.number from the event
-		     3. query the VP from the L1 oracle contract using `block.number` as the block tag	*/
-	}
+	/*if blockHeight > latest_committed_l2_height {
+	           query the VP from the L1 oracle contract using "latest" as the block tag
+		} else {
+			   /*1. query the L1 event `emit OutputProposed(_outputRoot, nextOutputIndex(), _l2BlockNumber, block.timestamp, block.number);`
+				to find the first event where the `_l2BlockNumber` >= blockHeight
+			     2. get the block.number from the event
+			     3. query the VP from the L1 oracle contract using `block.number` as the block tag
+		}*/
 
 	return 0, nil
 }
