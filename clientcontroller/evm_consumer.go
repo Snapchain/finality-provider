@@ -8,10 +8,7 @@ import (
 	fpcfg "github.com/babylonchain/finality-provider/finality-provider/config"
 	"github.com/babylonchain/finality-provider/types"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 )
@@ -23,10 +20,10 @@ import (
 var _ ConsumerController = &EVMConsumerController{}
 
 type EVMConsumerController struct {
-	l1Client *ethclient.Client
-	l2Client *ethclient.Client
-	cfg      *fpcfg.EVMConfig
-	logger   *zap.Logger
+	l1Client       *ethclient.Client
+	consumerClient *ethclient.Client
+	cfg            *fpcfg.EVMConfig
+	logger         *zap.Logger
 }
 
 func NewEVMConsumerController(
@@ -36,17 +33,17 @@ func NewEVMConsumerController(
 	if err := evmCfg.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config for EVM RPC client: %w", err)
 	}
-	l1Client, err := ethclient.Dial(evmCfg.RPCL1Addr)
+	l1Client, err := ethclient.Dial(evmCfg.L1RPCAddr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to the L1 RPC server %s: %w", evmCfg.RPCL1Addr, err)
+		return nil, fmt.Errorf("failed to connect to the L1 RPC server %s: %w", evmCfg.L1RPCAddr, err)
 	}
-	l2Client, err := ethclient.Dial(evmCfg.RPCL2Addr)
+	consumerClient, err := ethclient.Dial(evmCfg.ConsumerRPCAddr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to the L2 RPC server %s: %w", evmCfg.RPCL2Addr, err)
+		return nil, fmt.Errorf("failed to connect to the Consumer Chain RPC server %s: %w", evmCfg.ConsumerRPCAddr, err)
 	}
 	return &EVMConsumerController{
 		l1Client,
-		l2Client,
+		consumerClient,
 		evmCfg,
 		logger,
 	}, nil
@@ -71,23 +68,9 @@ func (ec *EVMConsumerController) SubmitBatchFinalitySigs(fpPk *btcec.PublicKey, 
 func (ec *EVMConsumerController) QueryFinalityProviderVotingPower(fpPk *btcec.PublicKey, blockHeight uint64) (uint64, error) {
 	/* TODO: implement
 
-	latest_committed_l2_height = read `latestBlockNumber()` from the L1 L2OutputOracle contract and return the result
+	   get votingpower from FP oracle contract
 
 	*/
-
-	/*latest_committed_l2_height, err := ec.queryLatestFinalizedNumber()
-	if err != nil {
-		return 0, fmt.Errorf("can't get latest finalized block number:%s", err)
-	}*/
-
-	/*if blockHeight > latest_committed_l2_height {
-	           query the VP from the L1 oracle contract using "latest" as the block tag
-		} else {
-			   /*1. query the L1 event `emit OutputProposed(_outputRoot, nextOutputIndex(), _l2BlockNumber, block.timestamp, block.number);`
-				to find the first event where the `_l2BlockNumber` >= blockHeight
-			     2. get the block.number from the event
-			     3. query the VP from the L1 oracle contract using `block.number` as the block tag
-		}*/
 
 	return 0, nil
 }
@@ -137,7 +120,7 @@ func (ec *EVMConsumerController) QueryBlock(height uint64) (*types.BlockInfo, er
 
 	number := new(big.Int).SetUint64(height)
 
-	header, err := ec.l2Client.HeaderByNumber(context.Background(), number)
+	header, err := ec.consumerClient.HeaderByNumber(context.Background(), number)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest block:%s", err)
 	}
@@ -169,7 +152,7 @@ func (ec *EVMConsumerController) QueryIsBlockFinalized(height uint64) (bool, err
 func (ec *EVMConsumerController) QueryActivatedHeight() (uint64, error) {
 	/* TODO: implement
 
-			oracle_event = query the event in the L1 oracle contract where the FP's voting power is firstly set
+			oracle_event = query the event in the FP oracle contract where the FP's voting power is firstly set
 
 			l1_activated_height = get the L1 block number from the `oracle_event`
 
@@ -177,67 +160,22 @@ func (ec *EVMConsumerController) QueryActivatedHeight() (uint64, error) {
 
 			example : event VotingPowerUpdated(bytes32 bitcoinPublicKey,uint32 chainId,uint64 indexed votingPower, uint256 indexed blockNumber, uint256 blockTimestamp);`
 
-		    codes for getting l1_activated_height:
+	 read atBlock from L1 EOTSVerifier contract
 
-			eventSignature := []byte("VotingPowerUpdated(bytes32,unit32,uint64,uint256,uint256)")
-		    hash := crypto.Keccak256Hash(eventSignature)
+	 find the first event where the `atBlock` >= l1_activated_height
 
-		    queryVotingPowerUpdated := ethereum.FilterQuery{
-			    FromBlock: big.NewInt(0),
-			    ToBlock:   nil,
-			    Addresses: []common.Address{
-				    common.HexToAddress(ec.cfg.BSAddr),
-			    },
-			    Topics: [][]common.Hash{{hash}},
-		    }
-	        logs, err := ec.l1Client.FilterLogs(context.Background(), queryVotingPowerUpdated)
-		    if err != nil {
-			     fmt.Errorf("Failed to filter logs: %v", err)
-		    }
-			l1_activated_height = new(big.Int).SetBytes(logs[0].Topics[1].Bytes())
-
-		}
-
-	*/
-	var l1_activated_height *big.Int
-
-	// event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp);
-	signatureOutputProposed := []byte("OutputProposed(bytes32,uint256,uint256,uint256)")
-	hashOutputProposed := crypto.Keccak256Hash(signatureOutputProposed)
-
-	queryOutputProposed := ethereum.FilterQuery{
-		FromBlock: big.NewInt(0),
-		ToBlock:   nil,
-		Addresses: []common.Address{
-			common.HexToAddress(ec.cfg.L2OutputOracleAddr),
-		},
-		Topics: [][]common.Hash{{hashOutputProposed}},
-	}
-
-	// find the first event where the `block.number` >= l1_activated_height
-	l2_BlockNumber, err := ec.queryBestBlock(queryOutputProposed, l1_activated_height)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get the best block:%s", err)
-	}
-
-	/*if output_event == nil:
-		      read `nextBlockNumber()` from the L1 L2OutputOracle contract and return the result
+	if output_event == nil:
+		      read `nextBlockNumber()` from the EOTSVerifier contract and return the result
 	     else:
-		      return output_event._l2BlockNumber*/
-	if l2_BlockNumber == nil {
-		l2_nextBlockNumber, err := ec.querynextBlockNumber()
-		if err != nil {
-			return 0, fmt.Errorf("failed to get next L2 block that needs to be checkpointed:%s ", err)
-		}
-		return l2_nextBlockNumber, nil
-	} else {
-		return l2_BlockNumber.Uint64(), nil
-	}
+		      return output_event.atBlock */
+
+	return 0, nil
+
 }
 
 func (ec *EVMConsumerController) QueryLatestBlockHeight() (uint64, error) {
 
-	header, err := ec.l2Client.HeaderByNumber(context.Background(), nil)
+	header, err := ec.consumerClient.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get latest block:%s", err)
 	}
@@ -248,39 +186,21 @@ func (ec *EVMConsumerController) QueryLatestBlockHeight() (uint64, error) {
 func (ec *EVMConsumerController) Close() error {
 
 	ec.l1Client.Close()
-	ec.l2Client.Close()
+	ec.consumerClient.Close()
 
 	return nil
 }
 
 func (ec *EVMConsumerController) queryLatestFinalizedNumber() (uint64, error) {
 
-	output, err := bindings.NewL2OutputOracle(common.HexToAddress(ec.cfg.L2OutputOracleAddr), ec.l1Client)
-	if err != nil {
-		return 0, fmt.Errorf("failed to instantiate L2OutputOracle contract:%s ", err)
-	}
-
-	lastNumber, err := output.LatestBlockNumber(nil)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get latest finalize block number:%s ", err)
-	}
-
-	return lastNumber.Uint64(), err
+	//get latest block number from EOTSVerifier contract
+	return 0, nil
 }
 
 func (ec *EVMConsumerController) querynextBlockNumber() (uint64, error) {
 
-	output, err := bindings.NewL2OutputOracle(common.HexToAddress(ec.cfg.L2OutputOracleAddr), ec.l1Client)
-	if err != nil {
-		return 0, fmt.Errorf("failed to instantiate L2OutputOracle contract:%s ", err)
-	}
-
-	nextBlockNumber, err := output.NextBlockNumber(nil)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get next L2 block that needs to be checkpointed:%s ", err)
-	}
-
-	return nextBlockNumber.Uint64(), err
+	//get next block number from EOTSVerifier contract
+	return 0, nil
 }
 
 func (ec *EVMConsumerController) queryBestBlock(query ethereum.FilterQuery, l1_activated_height *big.Int) (*big.Int, error) {
